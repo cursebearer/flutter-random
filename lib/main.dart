@@ -1,52 +1,80 @@
 import 'package:flutter/material.dart';
-import 'dart:math';
+import 'dart:async';
 
 void main() {
-  runApp(const RandomNumberGeneratorApp());
+  runApp(const TimerApp());
 }
 
-class RandomNumberGeneratorApp extends StatelessWidget {
+class TimerApp extends StatelessWidget {
 
-  const RandomNumberGeneratorApp({super.key});
+  const TimerApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Gerador de Números Aleatórios',
+      title: 'Timer',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const RandomNumberGeneratorScreen(),
+      home: const TimerScreen(),
     );
   }
 }
 
-class RandomNumberGeneratorScreen extends StatefulWidget {
-
-  const RandomNumberGeneratorScreen({super.key});
+class TimerScreen extends StatefulWidget {
+  const TimerScreen({super.key});
 
   @override
-  RandomNumberGeneratorScreenState createState() => RandomNumberGeneratorScreenState();
+  TimerScreenState createState() => TimerScreenState();
 }
 
-class RandomNumberGeneratorScreenState extends State<RandomNumberGeneratorScreen> {
-  final TextEditingController _minController = TextEditingController();
-  final TextEditingController _maxController = TextEditingController();
-  int? _randomNumber;
+class TimerScreenState extends State<TimerScreen> {
+  late Timer timer;
+  int seconds = 0;
+  bool isRunning = false;
 
-  void _generateRandomNumber() {
-    final int? min = int.tryParse(_minController.text);
-    final int? max = int.tryParse(_maxController.text);
-
-    if (min != null && max != null && min < max) {
-      setState(() {
-        _randomNumber = min + Random().nextInt(max - min + 1);
+  void startTimer() {
+    if (!isRunning) {
+      timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        setState(() {
+          seconds++;
+        });
       });
-    } else {
       setState(() {
-        _randomNumber = null; 
+        isRunning = true;
       });
     }
+  }
+
+  void pauseTimer() {
+    if (isRunning) {
+      timer.cancel();
+      setState(() {
+        isRunning = false;
+      });
+    }
+  }
+
+  void resetTimer() {
+    timer.cancel();
+    setState(() {
+      seconds = 0;
+      isRunning = false;
+    });
+  }
+
+  String formatTime(int seconds) {
+    int hours = seconds ~/ 3600;
+    int minutes = (seconds % 3600) ~/ 60;
+    int secs = seconds % 60;
+
+    return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
+  }
+
+  @override
+  void dispose() {
+    timer.cancel();
+    super.dispose();
   }
 
   @override
@@ -54,47 +82,37 @@ class RandomNumberGeneratorScreenState extends State<RandomNumberGeneratorScreen
     return Scaffold(
       appBar: AppBar(
         title: const Center(
-          child: Text('Gerador de Números Aleatórios'),
+          child: Text('Cronômetro Simples'),
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+      body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            TextField(
-              controller: _minController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Valor Mínimo',
-                border: OutlineInputBorder(),
-              ),
+            Text(
+              formatTime(seconds),
+              style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 40),
-            TextField(
-              controller: _maxController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Valor Máximo',
-                border: OutlineInputBorder(),
-              ),
+            const SizedBox(height: 50),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton(
+                  onPressed: startTimer,
+                  child: const Text('Iniciar'),
+                ),
+                const SizedBox(width: 20),
+                ElevatedButton(
+                  onPressed: pauseTimer,
+                  child: const Text('Pausar'),
+                ),
+                const SizedBox(width: 20),
+                ElevatedButton(
+                  onPressed: resetTimer,
+                  child: const Text('Resetar'),
+                ),
+              ],
             ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _generateRandomNumber,
-               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-              ),
-              child: const Text('Gerar Número Aleatório',
-              style: TextStyle(color: Colors.black),
-              ),
-            ),
-            const SizedBox(height: 40),
-            if (_randomNumber != null)
-              Text(
-                'Número Gerado: $_randomNumber',
-                style: const TextStyle(fontSize: 24),
-              ),
           ],
         ),
       ),
